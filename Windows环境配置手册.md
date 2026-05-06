@@ -89,6 +89,49 @@ if ($currentPath -split ';' -contains $npmGlobalPath) {
 
 ---
 
+### 2.3 常见问题：Git Bash 能打开 claude，但 VS Code 终端打不开
+
+#### 现象
+- 独立启动的 **Git Bash** 窗口可以正常运行 `claude`
+- 在 **VS Code 集成终端**（无论是 PowerShell 还是 Git Bash）中运行 `claude`，均提示 `command not found`
+
+#### 原因
+VS Code 主进程在系统 `PATH` 被修改**之前**就已经启动，导致其集成终端继承的是旧的环境变量，不包含后来添加的 npm 全局目录（`C:\Users\<用户名>\AppData\Roaming\npm`）。
+
+独立启动的 Git Bash 窗口是在 PATH 修改后打开的，因此能正确继承最新的系统环境变量。
+
+#### 诊断步骤
+
+在 VS Code 终端中执行以下命令，检查当前进程的环境变量：
+
+```powershell
+# 查看系统级 PATH 是否包含 npm 全局目录
+[Environment]::GetEnvironmentVariable("Path", "Machine") -split ';' | Where-Object { $_ -like '*npm*' }
+
+# 查看当前进程的实际 PATH
+$env:PATH -split ';' | Where-Object { $_ -like '*npm*' }
+```
+
+如果系统级 PATH 已包含 npm 目录，但进程级 PATH 没有，即可确认是 VS Code 未重新加载环境变量导致。
+
+#### 解决方案
+
+**必须完全重启 VS Code**：
+
+1. 关闭所有 VS Code 窗口（确保进程完全退出）
+2. 重新打开 VS Code
+3. 在集成终端中再次执行：
+
+```bash
+claude --version
+```
+
+此时 VS Code 集成终端应能正常识别 `claude` 命令。
+
+> **提示**：仅关闭终端标签页或重启终端是不够的，必须重启整个 VS Code 进程才能重新加载系统环境变量。
+
+---
+
 ## 三、Claude Code 代理配置（Git Bash + Clash）
 
 ### 2.1 前提条件
@@ -223,6 +266,7 @@ msiexec /i "C:\Users\%USERNAME%\Downloads\CC-Switch-v3.14.1-Windows.msi" /qn
 | `node` 命令找不到 | 检查系统 PATH 是否包含 Node.js 目录，重启终端 |
 | `npm` 在 PowerShell 报错 | PowerShell 执行策略限制，改用 CMD 或 `npm.cmd` |
 | `claude` 命令找不到（Git Bash） | npm 全局目录未加入 PATH，参考本文档 **2.2** 节修复 |
+| Git Bash 能打开 claude，但 VS Code 终端不行 | VS Code 未重新加载系统 PATH，参考本文档 **2.3** 节修复 |
 | Claude Code 无法连接 | 确认 Clash 已运行，且 `~/.bashrc` 中的端口号正确 |
 | Git Bash 代理未生效 | 确保修改的是 `~/.bashrc` 而非 `.bash_profile`，并重启 Git Bash |
 | `.claude.json` 不存在 | 先运行一次 `claude` 命令，让程序自动生成配置文件 |
