@@ -50,7 +50,46 @@ v25.9.0
 
 ---
 
-## 二、Claude Code 代理配置（Git Bash + Clash）
+## 二、Claude Code 安装（npm 全局安装）
+
+### 2.1 安装命令
+
+在 Git Bash 或任意终端执行：
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+### 2.2 常见问题：`claude: command not found`
+
+#### 现象
+`npm install -g` 显示安装成功，但在 Git Bash 中运行 `claude` 时提示 `command not found`。
+
+#### 原因
+npm 全局安装包的可执行文件存放在 `C:\Users\<用户名>\AppData\Roaming\npm` 目录下，而系统 `PATH` 中只配置了 Node.js 本体目录，缺少该 npm 全局目录。
+
+#### 解决方案
+以管理员身份打开 **PowerShell**，将 npm 全局目录添加到系统 PATH：
+
+```powershell
+$npmGlobalPath = "C:\Users\<你的用户名>\AppData\Roaming\npm"
+$currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+
+if ($currentPath -split ';' -contains $npmGlobalPath) {
+    Write-Host "Already in PATH"
+} else {
+    [Environment]::SetEnvironmentVariable("Path", "$currentPath;$npmGlobalPath", "Machine")
+    Write-Host "Added npm global path to system PATH"
+}
+```
+
+> **注意**：将 `<你的用户名>` 替换为实际 Windows 用户名。
+
+保存后，**关闭并重新打开** Git Bash 窗口，再次执行 `claude` 即可。
+
+---
+
+## 三、Claude Code 代理配置（Git Bash + Clash）
 
 ### 2.1 前提条件
 
@@ -183,6 +222,7 @@ msiexec /i "C:\Users\%USERNAME%\Downloads\CC-Switch-v3.14.1-Windows.msi" /qn
 |------|----------|
 | `node` 命令找不到 | 检查系统 PATH 是否包含 Node.js 目录，重启终端 |
 | `npm` 在 PowerShell 报错 | PowerShell 执行策略限制，改用 CMD 或 `npm.cmd` |
+| `claude` 命令找不到（Git Bash） | npm 全局目录未加入 PATH，参考本文档 **2.2** 节修复 |
 | Claude Code 无法连接 | 确认 Clash 已运行，且 `~/.bashrc` 中的端口号正确 |
 | Git Bash 代理未生效 | 确保修改的是 `~/.bashrc` 而非 `.bash_profile`，并重启 Git Bash |
 | `.claude.json` 不存在 | 先运行一次 `claude` 命令，让程序自动生成配置文件 |
@@ -195,6 +235,7 @@ msiexec /i "C:\Users\%USERNAME%\Downloads\CC-Switch-v3.14.1-Windows.msi" /qn
 |------|------|
 | Node.js 免安装目录 | `C:\Users\<用户名>\Downloads\node-v25.9.0-win-x64\node-v25.9.0-win-x64` |
 | Git Bash 代理配置 | `C:\Users\<用户名>\.bashrc` |
+| npm 全局可执行文件目录 | `C:\Users\<用户名>\AppData\Roaming\npm` |
 | Claude Code 主配置 | `C:\Users\<用户名>\.claude.json` |
 | Claude Code 设置 | `C:\Users\<用户名>\.claude\settings.json` |
 | CC Switch 安装包 | `C:\Users\<用户名>\Downloads\CC-Switch-v3.14.1-Windows.msi` |
